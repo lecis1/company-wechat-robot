@@ -1,4 +1,6 @@
+import os
 import requests
+from django.conf import settings
 from apps.core.background.worker_handler import BaseSchedulerHandler, BaseScheduler
 
 import json
@@ -15,8 +17,11 @@ class WeatherForecastHandler(BaseSchedulerHandler):
         misfire_grace_time=10,
     ) -> None:
         super().__init__(scheduler, name, trigger, trigger_args, misfire_grace_time)
-        self.city_data_info = r"C:\Users\dong\Desktop\个人文件\个人应用\company_wecaht_robot\data\city_data_info.json"
-        self.city_code_info = r"C:\Users\dong\Desktop\个人文件\个人应用\company_wecaht_robot\data\city_code.json"
+        # self.city_data_info = r"C:\Users\dong\Desktop\个人文件\个人应用\company_wecaht_robot\data\city_data_info.json"
+        # self.city_code_info = r"C:\Users\dong\Desktop\个人文件\个人应用\company_wecaht_robot\data\city_code.json"
+        self.city_code_info = os.path.join(settings.BASE_DIR, 'data/city_code.json')
+        self.city_data_info =  os.path.join(settings.BASE_DIR, "data/city_data_info.json")
+
 
     def tasks(self):
         return [self.weather_forecast]
@@ -27,16 +32,21 @@ class WeatherForecastHandler(BaseSchedulerHandler):
 
         weather_data_url = root_url+city_code
         city_info = self.get_city_info(weather_data_url)
+        city = city_info.get("cityInfo", {}).get("city", "")
         send_info = ""
         if city_info:
-            send_info = self.fomrat_info(city_info)
+            send_info = city + self.fomrat_info(city_info)
         if send_info:
+            pass
 
     def get_city_code(self):
         try:
             with open(self.city_code_info, 'r') as f:
                 content = json.loads(f.read())
-                return content
+                if content:
+                    return content
+                else:
+                    return "101270101"
         except:
             return "101270101"
 
@@ -54,10 +64,10 @@ class WeatherForecastHandler(BaseSchedulerHandler):
             print("获取城市天气数据失败，请检查")
             return
 
-    def fomrat_info(infos):
+    def fomrat_info(self, infos):
         send_info = ""
         info_template = "{datetime} {weekday}; 天气: {type}; 温度: {low}~{high} ℃; 日出: {sunrise}, 日落: {sunset}; 温馨提示: {notice}"
-        for info in info.get("data", {}).get("forcast", []):
+        for info in infos.get("data", {}).get("forecast", []):
             datetime = info.get("ymd")
             weekday = info.get("week")
             type = info.get("type")

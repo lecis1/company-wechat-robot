@@ -13,6 +13,6 @@ class WeatherForecastConfig(AppConfig):
             name="weather-forecast",
             handler="apps.weather_forecast.worker_handlers.WeatherForecastHandler",
             trigger="cron",
-            trigger_args={"minute": "*/1"},
+            trigger_args={"hour": "19", "minute": "30", "second": "0"},
         ),
     ]
